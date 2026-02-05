@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPMS - Gestion Pannes Étudiantes</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Variables CSS */
+        :root {
+            --green: #10b981;
+            --green-dark: #059669;
+            --orange: #f97316;
+            --orange-dark: #ea580c;
+            --gray-light: #f9fafb;
+            --gray: #6b7280;
+            --gray-dark: #374151;
+        }
+        
+        /* Reset & Base */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--gray-light) 0%, #e5e7eb 100%);
+            min-height: 100vh;
+            color: var(--gray-dark);
+        }
+        
+        /* Utilitaires */
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        .card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+            border: 1px solid #e5e7eb;
+        }
+        .btn {
+            padding: 12px 24px;
+            border-radius: 10px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 16px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%);
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        }
+        .btn-secondary {
+            background: var(--orange);
+            color: white;
+        }
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        .input-group { margin-bottom: 20px; }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--gray-dark);
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--green);
+        }
+        
+        /* Header */
+        .header {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 15px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--green);
+        }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 30px;
+            background: white;
+            padding: 8px;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+        }
+        .tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            background: none;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--gray);
+        }
+        .tab.active {
+            background: var(--green);
+            color: white;
+        }
+        
+        /* Status badges */
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .badge-waiting { background: #fef3c7; color: #92400e; }
+        .badge-progress { background: #dbeafe; color: #1e40af; }
+        .badge-completed { background: #d1fae5; color: #065f46; }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div class="logo">
+                    <i class="fas fa-tools"></i>
+                    <span>SPMS</span>
+                </div>
+                <div id="userInfo" style="display: none;">
+                    <span id="userEmail"></span>
+                    <button class="btn btn-danger" onclick="logout()" style="margin-left: 15px;">
+                        <i class="fas fa-sign-out-alt"></i> Déconnexion
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container" style="padding: 40px 0;">
+        <!-- Login Screen -->
+        <div id="loginScreen" style="max-width: 400px; margin: 60px auto;">
+            <div class="card" style="padding: 40px;">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <div style="width: 80px; height: 80px; background: linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; color: white; font-size: 32px;">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <h1 style="font-size: 32px; margin-bottom: 8px;">SPMS</h1>
+                    <p style="color: var(--gray);">Système de Gestion des Pannes Étudiantes</p>
+                </div>
+
+                <div id="errorMessage" style="display: none; background: #fee2e2; color: #991b1b; padding: 12px; border-radius: 8px; margin-bottom: 20px;"></div>
+
+                <div class="input-group">
+                    <label><i class="fas fa-envelope"></i> Email</label>
+                    <input type="email" id="email" placeholder="admin@example.com" required>
+                </div>
+                <div class="input-group">
+                    <label><i class="fas fa-lock"></i> Mot de passe</label>
+                    <input type="password" id="password" placeholder="••••••••" required>
+                </div>
+                <button class="btn btn-primary" onclick="login()" style="width: 100%;">
+                    <i class="fas fa-sign-in-alt"></i> Se connecter
+                </button>
+
+                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: var(--gray); font-size: 14px;">
+                    <p><i class="fas fa-exclamation-triangle"></i> Accès restreint</p>
+                    <p>Pas d'inscription publique. Admin uniquement.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Screen -->
+        <div id="dashboardScreen" style="display: none;">
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab active" onclick="showTab('mes-pannes')">
+                    <i class="fas fa-list"></i> Mes Pannes
+                </button>
+                <button class="tab" onclick="showTab('declarer')">
+                    <i class="fas fa-plus-circle"></i> Déclarer
+                </button>
+                <button class="tab" onclick="showTab('statistiques')">
+                    <i class="fas fa-chart-bar"></i> Statistiques
+                </button>
+            </div>
+
+            <!-- Tab Content -->
+            <div id="tabContent">
+                <!-- Mes Pannes Tab -->
+                <div id="mes-pannes" class="tab-pane" style="display: block;">
+                    <h2 style="margin-bottom: 20px;"><i class="fas fa-tasks"></i> Mes pannes déclarées</h2>
+                    <div id="pannesList" style="display: grid; gap: 16px;">
+                        <!-- Pannes will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Déclarer Tab -->
+                <div id="declarer" class="tab-pane" style="display: none;">
+                    <div class="card" style="padding: 30px;">
+                        <h2 style="margin-bottom: 25px;"><i class="fas fa-toolbox"></i> Déclarer une nouvelle panne</h2>
+                        
+                        <form id="newPanneForm">
+                            <div class="input-group">
+                                <label><i class="fas fa-heading"></i> Titre de la panne *</label>
+                                <input type="text" id="panneTitle" placeholder="Ex: Fuite d'eau dans la salle de bain" required>
+                            </div>
+                            
+                            <div class="input-group">
+                                <label><i class="fas fa-tags"></i> Catégorie *</label>
+                                <select id="panneCategory" required>
+                                    <option value="">Sélectionner une catégorie</option>
+                                    <option value="Électricité">⚡ Électricité</option>
+                                    <option value="Plomberie">🚰 Plomberie</option>
+                                    <option value="Chauffage">🔥 Chauffage</option>
+                                    <option value="Menuiserie">🪚 Menuiserie</option>
+                                    <option value="Équipement">🛠️ Équipement</option>
+                                    <option value="Nettoyage">🧹 Nettoyage</option>
+                                    <option value="Autre">❓ Autre</option>
+                                </select>
+                            </div>
+                            
+                            <div class="input-group">
+                                <label><i class="fas fa-map-marker-alt"></i> Localisation</label>
+                                <select id="panneLocation">
+                                    <option value="Chambre">🛏️ Chambre</option>
+                                    <option value="Cuisine">🍳 Cuisine</option>
+                                    <option value="Salle de bain">🚿 Salle de bain</option>
+                                    <option value="Couloir">🚶 Couloir</option>
+                                    <option value="Commun">🏢 Espace commun</option>
+                                </select>
+                            </div>
+                            
+                            <div class="input-group">
+                                <label><i class="fas fa-align-left"></i> Description détaillée</label>
+                                <textarea id="panneDescription" rows="4" placeholder="Décrivez la panne en détail..."></textarea>
+                            </div>
+                            
+                            <div style="display: flex; gap: 12px; margin-top: 25px;">
+                                <button type="submit" class="btn btn-secondary" style="flex: 1;">
+                                    <i class="fas fa-paper-plane"></i> Déclarer la panne
+                                </button>
+                                <button type="button" class="btn" onclick="showTab('mes-pannes')" style="background: #e5e7eb; color: var(--gray-dark);">
+                                    Annuler
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Statistiques Tab -->
+                <div id="statistiques" class="tab-pane" style="display: none;">
+                    <div class="card" style="padding: 30px;">
+                        <h2 style="margin-bottom: 25px;"><i class="fas fa-chart-line"></i> Statistiques</h2>
+                        <div id="statsContent">
+                            <p style="color: var(--gray); margin-bottom: 20px;">Chargement des statistiques...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Configuration Supabase
+        const SUPABASE_URL = 'https://cbldvqdkkjrfybpxsias.supabase.co';  // À remplacer
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNibGR2cWRra2pyZnlicHhzaWFzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzMjg0OTUsImV4cCI6MjA4NTkwNDQ5NX0.KVXrLumq1SxLT02XEdF-aEyfCsp-hXA4uZOjfPJgtxg';  // À remplacer
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        // État global
+        let currentUser = null;
+        let pannes = [];
+
+        // Au chargement
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAuth();
+            setupEventListeners();
+        });
+
+        // Vérifier l'authentification
+        async function checkAuth() {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                currentUser = user;
+                showDashboard();
+                await loadPannes();
+            } else {
+                showLogin();
+            }
+        }
+
+        // Connexion
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorEl = document.getElementById('errorMessage');
+
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email,
+                password
+            });
+
+            if (error) {
+                errorEl.textContent = '❌ ' + error.message;
+                errorEl.style.display = 'block';
+            } else {
+                currentUser = data.user;
+                showDashboard();
+                await loadPannes();
+            }
+        }
+
+        // Déconnexion
+        async function logout() {
+            await supabase.auth.signOut();
+            currentUser = null;
+            showLogin();
+        }
+
+        // Charger les pannes
+        async function loadPannes() {
+            if (!currentUser) return;
+            
+            const { data, error } = await supabase
+                .from('pannes')
+                .select('*')
+                .eq('student_id', currentUser.id)
+                .order('created_at', { ascending: false });
+            
+            if (!error && data) {
+                pannes = data;
+                displayPannes();
+            }
+        }
+
+        // Afficher les pannes
+        function displayPannes() {
+            const container = document.getElementById('pannesList');
+            
+            if (pannes.length === 0) {
+                container.innerHTML = `
+                    <div class="card" style="text-align: center; padding: 40px;">
+                        <div style="font-size: 48px; color: var(--gray); margin-bottom: 20px;">
+                            <i class="fas fa-inbox"></i>
+                        </div>
+                        <h3 style="margin-bottom: 10px;">Aucune panne déclarée</h3>
+                        <p style="color: var(--gray); margin-bottom: 25px;">Commencez par déclarer votre première panne</p>
+                        <button class="btn btn-primary" onclick="showTab('declarer')">
+                            <i class="fas fa-plus"></i> Déclarer une panne
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            pannes.forEach(panne => {
+                const date = new Date(panne.created_at).toLocaleDateString('fr-FR');
+                const statusClass = panne.status === 'waiting' ? 'badge-waiting' : 
+                                   panne.status === 'in_progress' ? 'badge-progress' : 'badge-completed';
+                const statusText = panne.status === 'waiting' ? '⏳ En attente' : 
+                                 panne.status === 'in_progress' ? '🔧 En cours' : '✅ Terminée';
+                
+                html += `
+                    <div class="card" style="padding: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+                            <div style="flex: 1;">
+                                <h3 style="font-weight: 600; margin-bottom: 5px;">${panne.title}</h3>
+                                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                                    <span style="background: #f3f4f6; padding: 4px 12px; border-radius: 20px; font-size: 14px;">
+                                        <i class="fas fa-tag"></i> ${panne.category}
+                                    </span>
+                                    <span style="background: #f3f4f6; padding: 4px 12px; border-radius: 20px; font-size: 14px;">
+                                        <i class="fas fa-map-marker-alt"></i> ${panne.location}
+                                    </span>
+                                </div>
+                            </div>
+                            <div>
+                                <span class="badge ${statusClass}">${statusText}</span>
+                            </div>
+                        </div>
+                        ${panne.description ? `<p style="color: var(--gray); margin-bottom: 15px;">${panne.description}</p>` : ''}
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: var(--gray); font-size: 14px;">
+                                <i class="far fa-calendar"></i> ${date}
+                            </span>
+                            ${panne.status === 'waiting' ? `
+                                <button onclick="deletePanne('${panne.id}')" style="color: #ef4444; background: none; border: none; cursor: pointer; font-size: 14px;">
+                                    <i class="fas fa-trash"></i> Supprimer
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // Supprimer une panne
+        async function deletePanne(id) {
+            if (!confirm('Supprimer cette panne ?')) return;
+            
+            const { error } = await supabase
+                .from('pannes')
+                .delete()
+                .eq('id', id)
+                .eq('student_id', currentUser.id);
+            
+            if (!error) {
+                await loadPannes();
+            }
+        }
+
+        // Créer une nouvelle panne
+        document.getElementById('newPanneForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const title = document.getElementById('panneTitle').value;
+            const category = document.getElementById('panneCategory').value;
+            const location = document.getElementById('panneLocation').value;
+            const description = document.getElementById('panneDescription').value;
+            
+            const { error } = await supabase.from('pannes').insert({
+                student_id: currentUser.id,
+                title,
+                category,
+                location,
+                description,
+                status: 'waiting'
+            });
+            
+            if (error) {
+                alert('Erreur : ' + error.message);
+            } else {
+                alert('✅ Panne déclarée avec succès !');
+                document.getElementById('newPanneForm').reset();
+                showTab('mes-pannes');
+                await loadPannes();
+            }
+        });
+
+        // Changer d'onglet
+        function showTab(tabName) {
+            // Mettre à jour les boutons d'onglet
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelector(`.tab[onclick*="${tabName}"]`).classList.add('active');
+            
+            // Afficher le contenu correspondant
+            document.querySelectorAll('.tab-pane').forEach(pane => {
+                pane.style.display = 'none';
+            });
+            document.getElementById(tabName).style.display = 'block';
+            
+            // Charger les stats si besoin
+            if (tabName === 'statistiques') {
+                loadStatistics();
+            }
+        }
+
+        // Charger les statistiques
+        async function loadStatistics() {
+            const container = document.getElementById('statsContent');
+            container.innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 32px; color: var(--green);">${pannes.length}</div>
+                        <div style="color: var(--gray);">Total pannes</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 32px; color: #f59e0b;">${pannes.filter(p => p.status === 'waiting').length}</div>
+                        <div style="color: var(--gray);">En attente</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 32px; color: #3b82f6;">${pannes.filter(p => p.status === 'in_progress').length}</div>
+                        <div style="color: var(--gray);">En cours</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 32px; color: var(--green);">${pannes.filter(p => p.status === 'completed').length}</div>
+                        <div style="color: var(--gray);">Terminées</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Événements
+        function setupEventListeners() {
+            document.getElementById('email').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') login();
+            });
+            document.getElementById('password').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') login();
+            });
+        }
+
+        // Afficher/cacher les écrans
+        function showDashboard() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('dashboardScreen').style.display = 'block';
+            document.getElementById('userInfo').style.display = 'block';
+            document.getElementById('userEmail').textContent = currentUser.email;
+        }
+
+        function showLogin() {
+            document.getElementById('loginScreen').style.display = 'block';
+            document.getElementById('dashboardScreen').style.display = 'none';
+            document.getElementById('userInfo').style.display = 'none';
+            document.getElementById('email').value = '';
+            document.getElementById('password').value = '';
+        }
+    </script>
+</body>
+</html>
