@@ -4,79 +4,115 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SPMS - Gestion Pannes Étudiantes</title>
+    <!-- CDN Supabase -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
-        /* Variables CSS */
-        :root {
-            --green: #10b981;
-            --green-dark: #059669;
-            --orange: #f97316;
-            --orange-dark: #ea580c;
-            --gray-light: #f9fafb;
-            --gray: #6b7280;
-            --gray-dark: #374151;
+        /* ========== STYLES SIMPLIFIÉS ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
         
-        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, var(--gray-light) 0%, #e5e7eb 100%);
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #f9fafb 0%, #e5e7eb 100%);
             min-height: 100vh;
-            color: var(--gray-dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
         
-        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        .container {
+            width: 100%;
+            max-width: 400px;
+        }
+        
         .card {
             background: white;
             border-radius: 16px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
             border: 1px solid #e5e7eb;
-            padding: 30px;
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border-radius: 16px;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin: 0 auto 20px;
+        }
+        
+        h1 {
+            font-size: 32px;
+            color: #111827;
+            margin-bottom: 8px;
+        }
+        
+        .subtitle {
+            color: #6b7280;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            color: #374151;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #10b981;
         }
         
         .btn {
-            padding: 12px 24px;
-            border-radius: 10px;
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
             border: none;
+            border-radius: 10px;
+            font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
-            font-size: 16px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
+            margin-top: 10px;
         }
-        .btn-primary {
-            background: linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%);
-            color: white;
-        }
-        .btn-primary:hover {
+        
+        .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
         }
         
-        .input-group { margin-bottom: 20px; }
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: var(--gray-dark);
-        }
-        input, select, textarea {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #e5e7eb;
-            border-radius: 10px;
-            font-size: 16px;
-            transition: border-color 0.2s;
-        }
-        input:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: var(--green);
-        }
-        
-        .error-message {
+        .error {
             background: #fee2e2;
             color: #991b1b;
             padding: 12px;
@@ -85,125 +121,105 @@
             display: none;
         }
         
+        .info {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            text-align: center;
+            color: #6b7280;
+            font-size: 14px;
+        }
+        
         .hidden {
             display: none !important;
         }
     </style>
 </head>
 <body>
-    <div class="container" style="padding: 40px 0;">
-        <!-- Login Screen -->
+    <div class="container">
+        <!-- Écran Login -->
         <div id="loginScreen">
-            <div class="card" style="max-width: 400px; margin: 0 auto;">
-                <div style="text-align: center; margin-bottom: 30px;">
-                    <div style="width: 80px; height: 80px; background: linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; color: white; font-size: 32px;">
-                        <i class="fas fa-building"></i>
+            <div class="card">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-tools"></i>
                     </div>
-                    <h1 style="font-size: 32px; margin-bottom: 8px;">SPMS</h1>
-                    <p style="color: var(--gray);">Système de Gestion des Pannes Étudiantes</p>
+                    <h1>SPMS</h1>
+                    <p class="subtitle">Système de Gestion des Pannes Étudiantes</p>
                 </div>
 
-                <div id="errorMessage" class="error-message"></div>
+                <div id="errorMessage" class="error"></div>
 
                 <div class="input-group">
                     <label><i class="fas fa-envelope"></i> Email</label>
                     <input type="email" id="email" placeholder="admin@example.com" required>
                 </div>
+                
                 <div class="input-group">
                     <label><i class="fas fa-lock"></i> Mot de passe</label>
                     <input type="password" id="password" placeholder="••••••••" required>
                 </div>
                 
-                <button id="loginBtn" class="btn btn-primary" style="width: 100%;">
+                <button id="loginBtn" class="btn">
                     <i class="fas fa-sign-in-alt"></i> Se connecter
                 </button>
 
-                <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: var(--gray); font-size: 14px;">
+                <div class="info">
                     <p><i class="fas fa-exclamation-triangle"></i> Accès restreint</p>
                     <p>Pas d'inscription publique. Admin uniquement.</p>
                 </div>
             </div>
         </div>
 
-        <!-- Dashboard Screen -->
+        <!-- Écran Dashboard -->
         <div id="dashboardScreen" class="hidden">
-            <div style="text-align: center; margin-bottom: 30px;">
-                <h1 style="font-size: 32px; color: var(--green);">
-                    <i class="fas fa-tools"></i> Tableau de bord SPMS
-                </h1>
-                <p id="welcomeMessage" style="color: var(--gray); margin-top: 10px;"></p>
-            </div>
-            
             <div class="card">
-                <h2 style="margin-bottom: 20px; color: var(--green);">
-                    <i class="fas fa-user-circle"></i> Informations
-                </h2>
-                <div style="background: var(--gray-light); padding: 20px; border-radius: 12px; margin-bottom: 25px;">
+                <div class="logo">
+                    <div class="logo-icon" style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <h1>Bienvenue !</h1>
+                    <p class="subtitle">Vous êtes connecté</p>
+                </div>
+
+                <div style="background: #f9fafb; padding: 20px; border-radius: 12px; margin-bottom: 25px;">
                     <p><strong>ID Utilisateur:</strong> <span id="userId"></span></p>
                     <p><strong>Email:</strong> <span id="userEmail"></span></p>
                     <p><strong>Rôle:</strong> <span id="userRole">Chargement...</span></p>
                 </div>
-                
-                <div style="display: flex; gap: 15px;">
-                    <button id="testPanneBtn" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Tester création panne
-                    </button>
-                    <button id="logoutBtn" class="btn" style="background: #ef4444; color: white;">
-                        <i class="fas fa-sign-out-alt"></i> Déconnexion
-                    </button>
+
+                <div id="debugInfo" style="font-family: monospace; font-size: 12px; background: #1f2937; color: #10b981; padding: 15px; border-radius: 8px; margin-bottom: 20px; max-height: 200px; overflow-y: auto;">
+                    <p>> Initialisation...</p>
                 </div>
-            </div>
-            
-            <div id="debugInfo" class="card" style="margin-top: 20px; font-family: monospace; font-size: 14px;">
-                <h3 style="color: var(--orange); margin-bottom: 15px;">
-                    <i class="fas fa-bug"></i> Informations de débogage
-                </h3>
-                <div id="debugContent">
-                    <p>En attente de connexion...</p>
-                </div>
+
+                <button id="logoutBtn" class="btn" style="background: #ef4444;">
+                    <i class="fas fa-sign-out-alt"></i> Déconnexion
+                </button>
             </div>
         </div>
     </div>
 
     <script>
-        // ================= CONFIGURATION =================
-        // ⚠️ REMPLACEZ CES VALEURS PAR LES VÔTRES !
-        const SUPABASE_URL = 'https://cbldvqdkkjrfybpxsias.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNibGR2cWRra2pyZnlicHhzaWFzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzMjg0OTUsImV4cCI6MjA4NTkwNDQ5NX0.KVXrLumq1SxLT02XEdF-aEyfCsp-hXA4uZOjfPJgtxg';
+        // ============================================
+        // CONFIGURATION SUPABASE - À MODIFIER !
+        // ============================================
+        const SUPABASE_URL = 'https://cbldvqdkkjrfybpxsias.supabase.co';  // REMPLACEZ
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNibGR2cWRra2pyZnlicHhzaWFzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAzMjg0OTUsImV4cCI6MjA4NTkwNDQ5NX0.KVXrLumq1SxLT02XEdF-aEyfCsp-hXA4uZOjfPJgtxg';  // REMPLACEZ
         
-        // ================= INITIALISATION =================
-        let supabase;
+        // ============================================
+        // VARIABLES GLOBALES
+        // ============================================
+        let supabaseClient = null;
         let currentUser = null;
         
-        // Fonction pour initialiser Supabase
-        function initSupabase() {
-            console.log('🚀 Initialisation de Supabase...');
-            console.log('URL:', SUPABASE_URL);
-            console.log('Key length:', SUPABASE_KEY ? SUPABASE_KEY.length : 'null');
-            
-            if (!SUPABASE_URL || !SUPABASE_KEY || 
-                SUPABASE_URL.includes('YOUR-PROJECT') || 
-                SUPABASE_KEY.includes('YOUR-ANON-KEY')) {
-                showError('❌ Configuration Supabase manquante !<br>Veuillez configurer SUPABASE_URL et SUPABASE_KEY dans le code.');
-                return false;
-            }
-            
-            try {
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                console.log('✅ Supabase initialisé avec succès');
-                return true;
-            } catch (error) {
-                console.error('❌ Erreur d\'initialisation Supabase:', error);
-                showError('Erreur d\'initialisation: ' + error.message);
-                return false;
-            }
-        }
-        
-        // ================= FONCTIONS UTILITAIRES =================
+        // ============================================
+        // FONCTIONS D'AFFICHAGE
+        // ============================================
         function showError(message) {
             const errorEl = document.getElementById('errorMessage');
-            errorEl.innerHTML = message;
+            errorEl.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + message;
             errorEl.style.display = 'block';
+            addDebug('ERROR: ' + message);
         }
         
         function hideError() {
@@ -215,217 +231,191 @@
             document.getElementById('loginScreen').classList.remove('hidden');
             document.getElementById('dashboardScreen').classList.add('hidden');
             hideError();
+            addDebug('Affichage écran login');
         }
         
         function showDashboard() {
             document.getElementById('loginScreen').classList.add('hidden');
             document.getElementById('dashboardScreen').classList.remove('hidden');
             hideError();
+            addDebug('Affichage écran dashboard');
         }
         
-        function updateDebugInfo(message, type = 'info') {
-            const debugEl = document.getElementById('debugContent');
-            const color = type === 'error' ? '#ef4444' : type === 'success' ? '#10b981' : '#6b7280';
-            const icon = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
-            
-            debugEl.innerHTML += `<p style="color: ${color}; margin: 5px 0;">${icon} ${message}</p>`;
+        function addDebug(message) {
+            const debugEl = document.getElementById('debugInfo');
+            debugEl.innerHTML += '<p>> ' + message + '</p>';
             debugEl.scrollTop = debugEl.scrollHeight;
         }
         
-        // ================= FONCTIONS AUTH =================
-        async function checkCurrentSession() {
-            console.log('🔍 Vérification de la session en cours...');
-            updateDebugInfo('Vérification de la session...');
-            
-            if (!supabase) {
-                console.error('Supabase non initialisé');
-                return;
-            }
-            
+        // ============================================
+        // INITIALISATION SUPABASE
+        // ============================================
+        function initSupabase() {
             try {
-                const { data: { session }, error } = await supabase.auth.getSession();
+                addDebug('Initialisation Supabase...');
+                
+                // Vérifier les clés
+                if (SUPABASE_URL.includes('YOUR-PROJECT') || SUPABASE_ANON_KEY.includes('YOUR-ANON-KEY')) {
+                    showError('Configuration Supabase manquante ! Modifiez les variables SUPABASE_URL et SUPABASE_ANON_KEY dans le code.');
+                    return false;
+                }
+                
+                // Créer le client
+                supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                addDebug('✅ Supabase initialisé');
+                return true;
+                
+            } catch (error) {
+                showError('Erreur d\'initialisation Supabase: ' + error.message);
+                return false;
+            }
+        }
+        
+        // ============================================
+        // FONCTIONS D'AUTHENTIFICATION
+        // ============================================
+        async function checkCurrentUser() {
+            try {
+                addDebug('Vérification session...');
+                const { data: { session }, error } = await supabaseClient.auth.getSession();
                 
                 if (error) {
-                    console.error('Erreur session:', error);
-                    updateDebugInfo('Erreur session: ' + error.message, 'error');
+                    addDebug('Erreur session: ' + error.message);
                     showLogin();
                     return;
                 }
                 
-                if (session) {
-                    console.log('✅ Session trouvée:', session.user.email);
+                if (session && session.user) {
                     currentUser = session.user;
+                    addDebug('✅ Session trouvée: ' + session.user.email);
                     await loadUserProfile();
                     showDashboard();
                 } else {
-                    console.log('❌ Aucune session active');
-                    updateDebugInfo('Aucune session active');
+                    addDebug('Aucune session active');
                     showLogin();
                 }
             } catch (error) {
-                console.error('Exception lors de la vérification de session:', error);
-                updateDebugInfo('Exception: ' + error.message, 'error');
+                addDebug('Exception: ' + error.message);
                 showLogin();
             }
         }
         
         async function login() {
-            console.log('🔐 Tentative de connexion...');
-            updateDebugInfo('Tentative de connexion...');
-            
-            const email = document.getElementById('email').value;
+            const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             
             if (!email || !password) {
                 showError('Veuillez remplir tous les champs');
-                updateDebugInfo('Champs manquants', 'error');
                 return;
             }
             
+            // Désactiver le bouton pendant la connexion
+            const loginBtn = document.getElementById('loginBtn');
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connexion...';
+            
             hideError();
-            document.getElementById('loginBtn').disabled = true;
-            document.getElementById('loginBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connexion...';
+            addDebug('Tentative de connexion avec: ' + email);
             
             try {
-                console.log('📧 Tentative de connexion avec:', email);
-                updateDebugInfo('Tentative avec email: ' + email);
-                
-                const { data, error } = await supabase.auth.signInWithPassword({
-                    email: email.trim(),
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email: email,
                     password: password
                 });
                 
                 if (error) {
-                    console.error('❌ Erreur de connexion:', error);
-                    showError('Erreur: ' + error.message);
-                    updateDebugInfo('Erreur auth: ' + error.message, 'error');
-                    
-                    // Debug supplémentaire
-                    if (error.message.includes('Invalid login credentials')) {
-                        updateDebugInfo('Email/mot de passe incorrect', 'error');
-                    } else if (error.message.includes('Email not confirmed')) {
-                        updateDebugInfo('Email non confirmé - vérifiez votre boîte mail', 'error');
-                    }
+                    showError('Erreur de connexion: ' + error.message);
+                    addDebug('❌ Erreur auth: ' + error.message);
                 } else {
-                    console.log('✅ Connexion réussie!', data.user);
                     currentUser = data.user;
-                    updateDebugInfo('Connexion réussie! ID: ' + data.user.id.substring(0, 8) + '...', 'success');
-                    
+                    addDebug('✅ Connexion réussie! ID: ' + data.user.id.substring(0, 8) + '...');
                     await loadUserProfile();
                     showDashboard();
                 }
             } catch (error) {
-                console.error('❌ Exception lors de la connexion:', error);
                 showError('Erreur inattendue: ' + error.message);
-                updateDebugInfo('Exception: ' + error.message, 'error');
+                addDebug('❌ Exception: ' + error.message);
             } finally {
-                document.getElementById('loginBtn').disabled = false;
-                document.getElementById('loginBtn').innerHTML = '<i class="fas fa-sign-in-alt"></i> Se connecter';
+                // Réactiver le bouton
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Se connecter';
             }
         }
         
         async function loadUserProfile() {
             if (!currentUser) return;
             
-            console.log('👤 Chargement du profil pour:', currentUser.id);
-            updateDebugInfo('Chargement du profil...');
-            
             // Afficher les infos de base
-            document.getElementById('welcomeMessage').textContent = 'Bienvenue ' + currentUser.email;
-            document.getElementById('userId').textContent = currentUser.id;
             document.getElementById('userEmail').textContent = currentUser.email;
+            document.getElementById('userId').textContent = currentUser.id.substring(0, 8) + '...';
+            
+            addDebug('Chargement du profil...');
             
             try {
                 // Récupérer le rôle depuis la table profiles
-                const { data: profile, error } = await supabase
+                const { data: profile, error } = await supabaseClient
                     .from('profiles')
                     .select('role, full_name')
                     .eq('id', currentUser.id)
                     .single();
                 
                 if (error) {
-                    console.warn('⚠️ Profil non trouvé:', error.message);
                     document.getElementById('userRole').textContent = 'Profil non trouvé';
-                    updateDebugInfo('Profil non trouvé dans la table "profiles"', 'error');
-                    updateDebugInfo('Exécutez le SQL pour créer le profil admin', 'error');
+                    addDebug('⚠️ Profil non trouvé: ' + error.message);
+                    addDebug('Exécutez le SQL pour créer le profil admin');
                 } else {
-                    console.log('✅ Profil trouvé:', profile);
                     document.getElementById('userRole').textContent = profile.role + ' - ' + profile.full_name;
-                    updateDebugInfo('Rôle: ' + profile.role + ', Nom: ' + profile.full_name, 'success');
+                    addDebug('✅ Rôle: ' + profile.role + ', Nom: ' + profile.full_name);
                 }
             } catch (error) {
-                console.error('Erreur lors du chargement du profil:', error);
-                document.getElementById('userRole').textContent = 'Erreur de chargement';
-                updateDebugInfo('Erreur profil: ' + error.message, 'error');
+                document.getElementById('userRole').textContent = 'Erreur';
+                addDebug('❌ Erreur profil: ' + error.message);
             }
         }
         
         async function logout() {
-            console.log('🚪 Déconnexion...');
-            updateDebugInfo('Déconnexion en cours...');
+            addDebug('Déconnexion...');
             
             try {
-                const { error } = await supabase.auth.signOut();
+                const { error } = await supabaseClient.auth.signOut();
                 if (error) {
-                    console.error('Erreur déconnexion:', error);
-                    updateDebugInfo('Erreur déconnexion: ' + error.message, 'error');
+                    addDebug('Erreur déconnexion: ' + error.message);
                 } else {
-                    console.log('✅ Déconnecté avec succès');
-                    updateDebugInfo('Déconnecté avec succès', 'success');
+                    addDebug('✅ Déconnecté avec succès');
                     currentUser = null;
                     document.getElementById('email').value = '';
                     document.getElementById('password').value = '';
-                    document.getElementById('debugContent').innerHTML = '';
+                    document.getElementById('debugInfo').innerHTML = '<p>> Initialisation...</p>';
                     showLogin();
                 }
             } catch (error) {
-                console.error('Exception déconnexion:', error);
-                updateDebugInfo('Exception: ' + error.message, 'error');
+                addDebug('Exception déconnexion: ' + error.message);
             }
         }
         
-        async function testCreatePanne() {
-            if (!currentUser) return;
+        // ============================================
+        // ÉVÉNEMENTS ET INITIALISATION
+        // ============================================
+        function setupEventListeners() {
+            // Bouton de connexion
+            document.getElementById('loginBtn').addEventListener('click', login);
             
-            console.log('🧪 Test création panne...');
-            updateDebugInfo('Test création panne...');
+            // Bouton de déconnexion
+            document.getElementById('logoutBtn').addEventListener('click', logout);
             
-            try {
-                const { data, error } = await supabase
-                    .from('pannes')
-                    .insert({
-                        student_id: currentUser.id,
-                        title: 'Test panne ' + new Date().toLocaleTimeString(),
-                        description: 'Ceci est un test de création de panne',
-                        category: 'Test',
-                        location: 'Bureau',
-                        status: 'waiting'
-                    })
-                    .select();
-                
-                if (error) {
-                    console.error('❌ Erreur création panne:', error);
-                    updateDebugInfo('Erreur création: ' + error.message, 'error');
-                    
-                    // Vérifier si la table existe
-                    if (error.message.includes('relation "pannes" does not exist')) {
-                        updateDebugInfo('Table "pannes" non trouvée - exécutez le SQL de création', 'error');
-                    } else if (error.message.includes('violates foreign key constraint')) {
-                        updateDebugInfo('Erreur clé étrangère - vérifiez le profil utilisateur', 'error');
-                    }
-                } else {
-                    console.log('✅ Panne créée:', data);
-                    updateDebugInfo('Panne créée avec ID: ' + data[0].id.substring(0, 8) + '...', 'success');
-                }
-            } catch (error) {
-                console.error('Exception création panne:', error);
-                updateDebugInfo('Exception: ' + error.message, 'error');
-            }
+            // Entrée = connexion
+            document.getElementById('password').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') login();
+            });
+            
+            addDebug('Événements configurés');
         }
         
-        // ================= INITIALISATION AU CHARGEMENT =================
+        // ============================================
+        // INITIALISATION AU CHARGEMENT
+        // ============================================
         document.addEventListener('DOMContentLoaded', async () => {
-            console.log('📄 Page chargée, initialisation...');
+            addDebug('Page chargée');
             
             // Initialiser Supabase
             if (!initSupabase()) {
@@ -433,39 +423,22 @@
             }
             
             // Configurer les événements
-            document.getElementById('loginBtn').addEventListener('click', login);
-            document.getElementById('logoutBtn').addEventListener('click', logout);
-            document.getElementById('testPanneBtn').addEventListener('click', testCreatePanne);
+            setupEventListeners();
             
-            // Entrée = login
-            document.getElementById('password').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') login();
-            });
+            // Vérifier si l'utilisateur est déjà connecté
+            await checkCurrentUser();
             
-            // Vérifier la session existante
-            await checkCurrentSession();
+            addDebug('✅ Prêt - entrez vos identifiants');
             
-            console.log('✅ Initialisation terminée');
-            updateDebugInfo('Prêt - entrez vos identifiants');
+            // Fonction de débogage pour la console
+            window.debugApp = function() {
+                console.log('=== DÉBOGAGE APP ===');
+                console.log('Supabase:', supabaseClient ? '✅ Initialisé' : '❌ Non initialisé');
+                console.log('Current User:', currentUser);
+                console.log('Config URL:', SUPABASE_URL);
+                console.log('Config Key length:', SUPABASE_ANON_KEY ? SUPABASE_ANON_KEY.length : 'null');
+            };
         });
-        
-        // ================= FONCTIONS DE DÉBOGAGE =================
-        // À appeler depuis la console pour tester
-        window.debugAuth = async function() {
-            console.log('=== DÉBOGAGE AUTH ===');
-            console.log('Supabase init:', !!supabase);
-            console.log('URL:', SUPABASE_URL);
-            console.log('Key exists:', !!SUPABASE_KEY);
-            
-            if (supabase) {
-                const { data: { session } } = await supabase.auth.getSession();
-                console.log('Session:', session);
-                
-                // Tester une requête simple
-                const { data, error } = await supabase.from('profiles').select('count').limit(1);
-                console.log('Test requête profiles:', error ? error : 'OK');
-            }
-        };
     </script>
 </body>
 </html>
